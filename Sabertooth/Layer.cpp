@@ -1,4 +1,8 @@
 #include "Layer.h"
+#include <GLFW\glfw3.h>
+#include <iostream>
+#include <glm\detail\type_mat.hpp>
+#include <glm\gtc\matrix_transform.hpp>
 
 Layer::Layer()
 {
@@ -15,16 +19,33 @@ Layer::Layer(int widthValue, int heightValue, int tidValue)
 	setScrollRateY(0.1);
 }
 
-void Layer::scroll(bool go)
-{
-
-}
+//void scroll(glm::mat4& matrix)
+//{
+//	static double previousSeconds = glfwGetTime();
+//	double currentSeconds = glfwGetTime();
+//	double elapsedSeconds = currentSeconds - previousSeconds;
+//
+//	previousSeconds = currentSeconds;
+//
+//	//if (fabs(tx) > 0.5f)
+//	//{
+//	//	scrolRateX = scrolRateX;
+//	//}
+//
+//	float value = this->ty + scrolRateY / 2.0f;
+//	matrix = glm::translate(glm::mat4(1), glm::vec3(0, value, 0));
+//}
 
 #pragma region Setters
 
 void Layer::setTid(GLuint value)
 {
 	this->tid = value;
+}
+
+void Layer::setId(int value)
+{
+	this->id = value;
 }
 
 void Layer::setWidth(int value)
@@ -37,24 +58,24 @@ void Layer::setHeight(int value)
 	this->height = value;
 }
 
-void Layer::setTx(int value)
+void Layer::setTx(float value)
 {
 	this->tx = value;
 }
 
-void Layer::setTy(int value)
+void Layer::setTy(float value)
 {
 	this->ty = value;
 }
 
-void Layer::setScrollRateX(int value)
+void Layer::setScrollRateX(float value)
 {
-	this->scrolRateX = value;
+	this->scrollRateX = value;
 }
 
-void Layer::setScrollRateY(int value)
+void Layer::setScrollRateY(float value)
 {
-	this->scrolRateY = value;
+	this->scrollRateY = value;
 }
 
 void Layer::setVao(GLuint value)

@@ -20,29 +20,29 @@ void RenderLayer(GLuint vao, GLuint texture, int sp)
 	glBindTexture(GL_TEXTURE_2D, texture);
 	glUniform1i(glGetUniformLocation(sp, "basic_texture"), 0);
 
-	glBindVertexArray(vao);
+	//glBindVertexArray(vao);
 	glDrawArrays(GL_TRIANGLES, 0, 6);
-	glBindVertexArray(0);
+	glBindVertexArray(vao);
 }
 
 void LoadImage(Layer& l, int id)
 {
 	const char* img = "";
-	int taxaDeIncremento = 0;
+	float taxaIncremento = 0;
 
 	switch (id)
 	{
 	case 1:
-		img = "..\\Images\\grass.jpg";
-		taxaDeIncremento = 0.5;
+		img = "..\\Images\\ocean2.jpg";
+		taxaIncremento = 1.0f;
 		break;
 	case 2:
 		img = "..\\Images\\street.png";
-		taxaDeIncremento = 0.5;
+		taxaIncremento = 0.5f;
 		break;
 	case 3:
-		img = "..\\Images\cloud.png";
-		taxaDeIncremento = 1;
+		img = "..\\Images\\cloud.png";
+		taxaIncremento = 0.8f;
 		break;
 	}
 
@@ -51,8 +51,6 @@ void LoadImage(Layer& l, int id)
 	glBindTexture(GL_TEXTURE_2D, texture);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	int width, height, nrChannels;
 	unsigned char* data = stbi_load(img, &width, &height, &nrChannels, 0);
@@ -68,9 +66,9 @@ void LoadImage(Layer& l, int id)
 
 		l.setHeight(height);
 		l.setWidth(width);
-		l.setTy(texture);
-		l.setTid(id);
-		l.setScrollRateY(taxaDeIncremento);
+		l.setTid(texture);
+		l.setId(id);
+		l.setScrollRateY(taxaIncremento);
 	}
 	else
 	{
@@ -119,7 +117,7 @@ void StartGame(GLFWwindow* window)
 		"out vec2 texture_coordinates;"
 		"uniform float layer_z;"
 		"void main() {"
-		"	texture_coordinates = texture_mapping;"
+		"	texture_coordinates = vec2( texture_mapping.x, 1.0 - texture_mapping.y );"
 		"	gl_Position = proj * matrix * vec4 (vertex_position, 1.0);"
 		"}";
 
@@ -128,9 +126,11 @@ void StartGame(GLFWwindow* window)
 		"#version 410\n"
 		"in vec2 texture_coordinates;"
 		"uniform sampler2D basic_texture;"
+		"uniform float offsetx;"
+		"uniform float offsety;"
 		"out vec4 frag_color;"
 		"void main() {"
-		" vec4 texel = texture(basic_texture, texture_coordinates);"
+		" vec4 texel = texture(basic_texture, vec2(texture_coordinates.x + offsetx, texture_coordinates.y + offsety));"
 		" if (texel.a < 0.5) "
 		"	discard; "
 		" frag_color = texel;"
@@ -156,18 +156,17 @@ void StartGame(GLFWwindow* window)
 	glAttachShader(shader_programme, vs);
 	glLinkProgram(shader_programme);
 
-
 	for (size_t i = 0; i < 3; i++)
 	{
 		LoadImage(layers[i], i + 1);
 
 		geometriaLayer(layers[i]);
 
-		glBindVertexArray(0);
+		glBindVertexArray(layers[i].vao);
 	}
 
-
-	while (!glfwWindowShouldClose(window)) {
+	while (!glfwWindowShouldClose(window))
+	{
 		//glfwPollEvents();
 		//const int state = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
 		//if (state == GLFW_PRESS) {
@@ -189,36 +188,43 @@ void StartGame(GLFWwindow* window)
 
 		glUseProgram(shader_programme);
 		proj = glm::ortho(0.0f, (float)WIDTH, (float)HEIGHT, 0.0f, -1.0f, 1.0f);
-		glUniformMatrix4fv(
-			glGetUniformLocation(shader_programme, "proj"), 1,
-			GL_FALSE, glm::value_ptr(proj));
-		glUniformMatrix4fv(
-			glGetUniformLocation(shader_programme, "matrix"), 1,
-			GL_FALSE, glm::value_ptr(matrix));
+
+		glUniformMatrix4fv(glGetUniformLocation(shader_programme, "proj"), 1, GL_FALSE, glm::value_ptr(proj));
+		glUniformMatrix4fv(glGetUniformLocation(shader_programme, "matrix"), 1, GL_FALSE, glm::value_ptr(matrix));
 
 		for (size_t i = 0; i < 3; i++)
 		{
 			RenderLayer(layers[i].vao, layers[i].tid, shader_programme);
-		}
+			//if (layers[i].id == 1) {
+			layers[i].ty -= layers[i].scrollRateY * 0.015f;
 
-		//Fim do código para carregar textura
+			glUniform1f(glGetUniformLocation(shader_programme, "offsety"), layers[i].ty);
+
+			// bind Texture
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, layers[i].tid);
+			glUniform1i(glGetUniformLocation(shader_programme, "sprite"), 0);
+
+			//}
+		}
 
 		glfwSwapBuffers(window);
 	}
 }
 
-
-int main() {
-
+int main()
+{
 	// Tratamento para rodar em outros ambientes
-	if (!glfwInit()) {
+	if (!glfwInit())
+	{
 		fprintf(stderr, "ERROR: could not start GLFW3\n");
 		return 1;
 	}
 
 	GLFWwindow* window = glfwCreateWindow(800, 600, "Road Fighter developed by Matheus Moraes Porto", NULL, NULL);
 
-	if (!window) {
+	if (!window)
+	{
 		fprintf(stderr, "ERROR: could not open window with GLFW3\n");
 		glfwTerminate();
 		return 1;
