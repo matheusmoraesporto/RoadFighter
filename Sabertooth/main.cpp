@@ -21,6 +21,7 @@ void Render(GLuint vao, GLuint texture, int sp)
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture);
 	glUniform1i(glGetUniformLocation(sp, "basic_texture"), 0);
+	glBindVertexArray(vao);
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 	glBindVertexArray(vao);
 }
@@ -127,15 +128,37 @@ void DefineGeometry(Layer& l, GameObject& go, bool isSprite)
 		800.0f, 0.0f,   +0.0f,	  1.0f, 1.0f,
 	};
 
-	GLfloat verticesSprite[] = {
+	GLfloat verticesSpriteEnemyWhite[] = {
 		// positions			  // texture coords
-		0.0f, 300.0f, +0.0f,	  0.0, 0.0f,
-		0.0f, 150.0f, +0.0f,	  0.0f, 1.0f,
+		150.0f, 300.0f, +0.0f,	  0.0, 0.0f,
+		150.0f, 150.0f, +0.0f,	  0.0f, 1.0f,
 		250.0f, 300.0f, +0.0f,	  1.0f, 0.0f,
 
 		250.0f, 300.0f, +0.0f,	  1.0, 0.0f,
-		0.0f, 150.0f, +0.0f,	  0.0f, 1.0f,
+		150.0f, 150.0f, +0.0f,	  0.0f, 1.0f,
 		250.0f, 150.0f, +0.0f,	  1.0f, 1.0f,
+	};
+
+	GLfloat verticesSpriteEnemyRed[] = {
+		// positions			  // texture coords
+		450.0f, 300.0f, +0.0f,	  0.0, 0.0f,
+		450.0f, 150.0f, +0.0f,	  0.0f, 1.0f,
+		550.0f, 300.0f, +0.0f,	  1.0f, 0.0f,
+
+		550.0f, 300.0f, +0.0f,	  1.0, 0.0f,
+		450.0f, 150.0f, +0.0f,	  0.0f, 1.0f,
+		550.0f, 150.0f, +0.0f,	  1.0f, 1.0f,
+	};
+
+	GLfloat verticesSpritePlayer[] = {
+		// positions			  // texture coords
+		300.0f, 300.0f, +0.0f,	  0.0, 0.0f,
+		300.0f, 150.0f, +0.0f,	  0.0f, 1.0f,
+		450.0f, 300.0f, +0.0f,	  1.0f, 0.0f,
+
+		450.0f, 300.0f, +0.0f,	  1.0, 0.0f,
+		300.0f, 150.0f, +0.0f,	  0.0f, 1.0f,
+		450.0f, 150.0f, +0.0f,	  1.0f, 1.0f,
 	};
 
 	GLuint VAO, VBO;
@@ -148,9 +171,21 @@ void DefineGeometry(Layer& l, GameObject& go, bool isSprite)
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-	isSprite
-		? glBufferData(GL_ARRAY_BUFFER, sizeof(verticesSprite), verticesSprite, GL_STATIC_DRAW)
-		: glBufferData(GL_ARRAY_BUFFER, sizeof(verticesLayer), verticesLayer, GL_STATIC_DRAW);
+	if (go.id == 4) {
+		glBufferData(GL_ARRAY_BUFFER, sizeof(verticesSpritePlayer), verticesSpritePlayer, GL_STATIC_DRAW);
+	}
+	else if (go.id == 5)
+	{
+		glBufferData(GL_ARRAY_BUFFER, sizeof(verticesSpriteEnemyRed), verticesSpriteEnemyRed, GL_STATIC_DRAW);
+	}
+	else if (go.id == 6)
+	{
+		glBufferData(GL_ARRAY_BUFFER, sizeof(verticesSpriteEnemyWhite), verticesSpriteEnemyWhite, GL_STATIC_DRAW);
+	}
+	else
+	{
+		glBufferData(GL_ARRAY_BUFFER, sizeof(verticesLayer), verticesLayer, GL_STATIC_DRAW);
+	}
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void*)(3 * sizeof(float)));
@@ -275,9 +310,24 @@ void StartGame(GLFWwindow* window)
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, layers[i].tid);
 			glUniform1i(glGetUniformLocation(shader_programme, "sprite"), 0);
+
+			if (i == 1)
+			{
+				for (size_t i = 0; i < 3; i++)
+				{
+					Render(sprites[i].vao, sprites[i].tid, shader_programme);
+					glUniform1f(glGetUniformLocation(shader_programme, "offsetx"), 0);
+					glUniform1f(glGetUniformLocation(shader_programme, "offsety"), 0);
+					glUniform1f(glGetUniformLocation(shader_programme, "layer_z"), 1.0);
+					glActiveTexture(GL_TEXTURE0);
+					glBindTexture(GL_TEXTURE_2D, sprites[i].tid);
+					glUniform1i(glGetUniformLocation(shader_programme, "sprite"), 0);
+				}
+			}
+
 		}
 
-		//Render(sprites[0].vao, sprites[0].tid, shader_programme);
+
 
 		glfwSwapBuffers(window);
 	}
