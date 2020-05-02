@@ -293,18 +293,14 @@ void StartGame(GLFWwindow* window)
 
 		for (size_t i = 0; i < 3; i++)
 		{
-			Render(layers[i].vao, layers[i].tid, shader_programme);
-
-			// id == 1 == street
-			// id == 2 == cloud
-			// id == 3 == ocean
-			// id == 4 == player
 
 			layers[i].ty -= layers[i].scrollRateY * 0.015f;
 
 			glUniform1f(glGetUniformLocation(shader_programme, "offsetx"), layers[i].tx);
 			glUniform1f(glGetUniformLocation(shader_programme, "offsety"), layers[i].ty);
 			glUniform1f(glGetUniformLocation(shader_programme, "layer_z"), layers[i].z);
+
+			Render(layers[i].vao, layers[i].tid, shader_programme);
 
 			// bind Texture
 			glActiveTexture(GL_TEXTURE0);
@@ -315,6 +311,7 @@ void StartGame(GLFWwindow* window)
 			{
 				for (size_t i = 0; i < 3; i++)
 				{
+					glUniform1f(glGetUniformLocation(shader_programme, "offsety"), 0);
 					Render(sprites[i].vao, sprites[i].tid, shader_programme);
 					glUniform1f(glGetUniformLocation(shader_programme, "offsetx"), 0);
 					glUniform1f(glGetUniformLocation(shader_programme, "offsety"), 0);
