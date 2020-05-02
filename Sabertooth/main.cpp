@@ -1,4 +1,4 @@
-#include <GL/glew.h> /* include GLEW and new version of GL on Windows */
+#include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -9,48 +9,77 @@
 #include <stb_image.h>
 #include <stdlib.h>
 #include "Layer.h"
+#include "GameObject.h"
 using namespace std;
 
 Layer layers[3];
+GameObject sprites[3];
 
-void RenderLayer(GLuint vao, GLuint texture, int sp)
+void Render(GLuint vao, GLuint texture, int sp)
 {
 	//Inicio do código para carregar textura
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture);
 	glUniform1i(glGetUniformLocation(sp, "basic_texture"), 0);
-
-	//glBindVertexArray(vao);
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 	glBindVertexArray(vao);
 }
 
-void LoadImage(Layer& l, int id)
+void LoadImage(Layer& l, GameObject& go, int id, bool isSprite)
 {
 	const char* img = "";
 	float taxaIncremento = 0;
+	float valueZ = 0;
+	char name;
 
 	switch (id)
 	{
 	case 1:
-		img = "..\\Images\\ocean2.jpg";
+		img = "..\\Images\\ocean.jpg";
 		taxaIncremento = 1.0f;
+		valueZ = 1.0f;
 		break;
 	case 2:
 		img = "..\\Images\\street.png";
 		taxaIncremento = 0.5f;
+		valueZ = 1.001f;
 		break;
 	case 3:
 		img = "..\\Images\\cloud.png";
 		taxaIncremento = 0.8f;
+		valueZ = 1.002f;
+		break;
+	case 4:
+		img = "..\\Images\\player.png";
+		valueZ = 1.0f;
+		break;
+	case 5:
+		img = "..\\Images\\enemyRed.png";
+		valueZ = 1.0f;
+		break;
+	case 6:
+		img = "..\\Images\\enemyWhite.png";
+		valueZ = 1.0f;
 		break;
 	}
 
 	GLuint texture;
 	glGenTextures(1, &texture);
 	glBindTexture(GL_TEXTURE_2D, texture);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	if (isSprite)
+	{
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_LINEAR);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	}
+	else
+	{
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	}
 
 	int width, height, nrChannels;
 	unsigned char* data = stbi_load(img, &width, &height, &nrChannels, 0);
@@ -64,11 +93,20 @@ void LoadImage(Layer& l, int id)
 		glGenerateMipmap(GL_TEXTURE_2D);
 		stbi_image_free(data);
 
-		l.setHeight(height);
-		l.setWidth(width);
-		l.setTid(texture);
-		l.setId(id);
-		l.setScrollRateY(taxaIncremento);
+		if (isSprite)
+		{
+			go.setTid(texture);
+			go.setId(id);
+		}
+		else
+		{
+			l.setHeight(height);
+			l.setWidth(width);
+			l.setTid(texture);
+			l.setId(id);
+			l.setScrollRateY(taxaIncremento);
+			l.setZ(valueZ);
+		}
 	}
 	else
 	{
@@ -76,10 +114,10 @@ void LoadImage(Layer& l, int id)
 	}
 }
 
-void geometriaLayer(Layer& l)
+void DefineGeometry(Layer& l, GameObject& go, bool isSprite)
 {
-	GLfloat vertices[] = {
-		// positions			// texture coords
+	GLfloat verticesLayer[] = {
+		// positions			  // texture coords
 		0.0f,   600.0f, +0.0f,	  0.0, 0.0f,
 		0.0f,   0.0f,   +0.0f,	  0.0f, 1.0f,
 		800.0f, 600.0f, +0.0f,	  1.0f, 0.0f,
@@ -89,20 +127,37 @@ void geometriaLayer(Layer& l)
 		800.0f, 0.0f,   +0.0f,	  1.0f, 1.0f,
 	};
 
+	GLfloat verticesSprite[] = {
+		// positions			  // texture coords
+		0.0f, 300.0f, +0.0f,	  0.0, 0.0f,
+		0.0f, 150.0f, +0.0f,	  0.0f, 1.0f,
+		250.0f, 300.0f, +0.0f,	  1.0f, 0.0f,
+
+		250.0f, 300.0f, +0.0f,	  1.0, 0.0f,
+		0.0f, 150.0f, +0.0f,	  0.0f, 1.0f,
+		250.0f, 150.0f, +0.0f,	  1.0f, 1.0f,
+	};
+
 	GLuint VAO, VBO;
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
 
 	glBindVertexArray(VAO);
-	l.setVao(VAO);
+
+	isSprite ? go.setVao(VAO) : l.setVao(VAO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	isSprite
+		? glBufferData(GL_ARRAY_BUFFER, sizeof(verticesSprite), verticesSprite, GL_STATIC_DRAW)
+		: glBufferData(GL_ARRAY_BUFFER, sizeof(verticesLayer), verticesLayer, GL_STATIC_DRAW);
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void*)(3 * sizeof(float)));
+
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
+	glBindVertexArray(0);
 }
 
 void StartGame(GLFWwindow* window)
@@ -118,7 +173,7 @@ void StartGame(GLFWwindow* window)
 		"uniform float layer_z;"
 		"void main() {"
 		"	texture_coordinates = vec2( texture_mapping.x, 1.0 - texture_mapping.y );"
-		"	gl_Position = proj * matrix * vec4 (vertex_position, 1.0);"
+		"	gl_Position = proj * matrix * vec4 (vertex_position, layer_z);"
 		"}";
 
 	//Fragment da textura
@@ -158,11 +213,20 @@ void StartGame(GLFWwindow* window)
 
 	for (size_t i = 0; i < 3; i++)
 	{
-		LoadImage(layers[i], i + 1);
+		LoadImage(layers[i], GameObject::GameObject(), i + 1, false);
 
-		geometriaLayer(layers[i]);
+		DefineGeometry(layers[i], GameObject::GameObject(), false);
 
 		glBindVertexArray(layers[i].vao);
+	}
+
+	for (size_t j = 0; j < 3; j++)
+	{
+		LoadImage(Layer::Layer(), sprites[j], j + 4, true);
+
+		DefineGeometry(Layer::Layer(), sprites[j], true);
+
+		glBindVertexArray(sprites[j].vao);
 	}
 
 	while (!glfwWindowShouldClose(window))
@@ -194,19 +258,26 @@ void StartGame(GLFWwindow* window)
 
 		for (size_t i = 0; i < 3; i++)
 		{
-			RenderLayer(layers[i].vao, layers[i].tid, shader_programme);
-			//if (layers[i].id == 1) {
+			Render(layers[i].vao, layers[i].tid, shader_programme);
+
+			// id == 1 == street
+			// id == 2 == cloud
+			// id == 3 == ocean
+			// id == 4 == player
+
 			layers[i].ty -= layers[i].scrollRateY * 0.015f;
 
+			glUniform1f(glGetUniformLocation(shader_programme, "offsetx"), layers[i].tx);
 			glUniform1f(glGetUniformLocation(shader_programme, "offsety"), layers[i].ty);
+			glUniform1f(glGetUniformLocation(shader_programme, "layer_z"), layers[i].z);
 
 			// bind Texture
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, layers[i].tid);
 			glUniform1i(glGetUniformLocation(shader_programme, "sprite"), 0);
-
-			//}
 		}
+
+		//Render(sprites[0].vao, sprites[0].tid, shader_programme);
 
 		glfwSwapBuffers(window);
 	}

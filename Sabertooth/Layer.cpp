@@ -19,23 +19,6 @@ Layer::Layer(int widthValue, int heightValue, int tidValue)
 	setScrollRateY(0.1);
 }
 
-//void scroll(glm::mat4& matrix)
-//{
-//	static double previousSeconds = glfwGetTime();
-//	double currentSeconds = glfwGetTime();
-//	double elapsedSeconds = currentSeconds - previousSeconds;
-//
-//	previousSeconds = currentSeconds;
-//
-//	//if (fabs(tx) > 0.5f)
-//	//{
-//	//	scrolRateX = scrolRateX;
-//	//}
-//
-//	float value = this->ty + scrolRateY / 2.0f;
-//	matrix = glm::translate(glm::mat4(1), glm::vec3(0, value, 0));
-//}
-
 #pragma region Setters
 
 void Layer::setTid(GLuint value)
@@ -83,4 +66,13 @@ void Layer::setVao(GLuint value)
 	this->vao = value;
 }
 
+void Layer::setZ(float value)
+{
+	this->z = value;
+}
+
+void Layer::setName(char value)
+{
+	this->name = value;
+}
 #pragma endregion
