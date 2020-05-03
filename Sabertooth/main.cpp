@@ -407,13 +407,14 @@ void StartGame(GLFWwindow* window)
 			goDown += 2.0f;
 		}
 
-		//if (
-		//	(goDown >= 570 && moveLeftRigth <= -85)
-		//	//|| (goDown >= 550 && moveLeftRigth <= -85.0)
-		//	)
-		//{
-		//	isGameOver = true;
-		//}
+		if (
+			(goDown >= 570 && goDown <= 846 && moveLeftRigth <= -85) ||
+			(goDown >= 800 && goDown <= 1040 && moveLeftRigth >= -70 && moveLeftRigth <= 120) ||
+			(goDown >= 930 && goDown <= 1200 && moveLeftRigth >= 126)
+			)
+		{
+			isGameOver = true;
+		}
 
 		const int enter = glfwGetKey(window, GLFW_KEY_ENTER);
 		if (enter == GLFW_PRESS)
