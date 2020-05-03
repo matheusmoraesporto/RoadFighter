@@ -62,6 +62,14 @@ void LoadImage(Layer& l, GameObject& go, int id, bool isSprite)
 		img = "..\\Images\\enemyWhite.png";
 		valueZ = 1.0f;
 		break;
+	case 7:
+		img = "..\\Images\\youWin.PNG";
+		valueZ = 1.0f;
+		break;
+	case 8:
+		img = "..\\Images\\gameOver.PNG";
+		valueZ = 1.0f;
+		break;
 	}
 
 	GLuint texture;
@@ -171,7 +179,7 @@ void DefineGeometry(Layer& l, GameObject& go, bool isSprite)
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-	if (go.id == 4) 
+	if (go.id == 4)
 	{
 		glBufferData(GL_ARRAY_BUFFER, sizeof(verticesSpritePlayer), verticesSpritePlayer, GL_STATIC_DRAW);
 	}
@@ -282,11 +290,23 @@ void StartGame(GLFWwindow* window)
 		glBindVertexArray(sprites[j].vao);
 	}
 
+	GameObject gameOver = GameObject::GameObject();
+	LoadImage(Layer::Layer(), gameOver, 8, true);
+	DefineGeometry(Layer::Layer(), gameOver, true);
+	glBindVertexArray(gameOver.vao);
+
+	GameObject youWin = GameObject::GameObject();
+	LoadImage(Layer::Layer(), youWin, 7, true);
+	DefineGeometry(Layer::Layer(), youWin, true);
+	glBindVertexArray(youWin.vao);
+
 	glm::mat4 matrix2 = glm::mat4(1.0f);
 	unsigned int transformloc = glGetUniformLocation(shader_programme, "matrix");
 	glUniformMatrix4fv(transformloc, 1, GL_FALSE, glm::value_ptr(matrix));
 	float goDown = -300;
 	float moveLeftRigth = 0.0f;
+	bool isGameOver = false;
+	int outdatedCars = 0;
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -306,46 +326,71 @@ void StartGame(GLFWwindow* window)
 		glUniformMatrix4fv(glGetUniformLocation(shader_programme, "proj"), 1, GL_FALSE, glm::value_ptr(proj));
 		glUniformMatrix4fv(glGetUniformLocation(shader_programme, "matrix"), 1, GL_FALSE, glm::value_ptr(matrix));
 
-		for (size_t i = 0; i < 3; i++)
+		if (outdatedCars >= 1)
 		{
-			layers[i].ty -= layers[i].scrollRateY * 0.015f;
-
-			DefineOffsetAndRender(shader_programme, layers[i].tx, layers[i].ty, layers[i].z, layers[i].vao, layers[i].tid);
+			DefineOffsetAndRender(shader_programme, 0.0f, 0.0f, 1.0f, youWin.vao, youWin.tid);
 		}
-
-		for (size_t i = 0; i < 3; i++)
+		else if (isGameOver)
 		{
-			if (sprites[i].vao == 4) 
+			DefineOffsetAndRender(shader_programme, 0.0f, 0.0f, 1.0f, gameOver.vao, gameOver.tid);
+		}
+		else
+		{
+			for (size_t i = 0; i < 3; i++)
 			{
-				const int moveLeft = glfwGetKey(window, GLFW_KEY_LEFT);
-				if (moveLeft == GLFW_PRESS && moveLeftRigth >= -200.0f)
-				{
-					moveLeftRigth -= 1.0f;
-				}
+				layers[i].ty -= layers[i].scrollRateY * 0.015f;
 
-				const int moveRight = glfwGetKey(window, GLFW_KEY_RIGHT);
-				if (moveRight == GLFW_PRESS && moveLeftRigth <= 250.0f)
-				{
-					moveLeftRigth += 1.0f;
-				}
-
-				Transform(matrix2, transformloc, shader_programme, moveLeftRigth, 0.0f, 0.0f);
+				DefineOffsetAndRender(shader_programme, layers[i].tx, layers[i].ty, layers[i].z, layers[i].vao, layers[i].tid);
 			}
 
-			if (sprites[i].vao > 4)
+			for (size_t i = 0; i < 3; i++)
 			{
-				Transform(matrix2, transformloc, shader_programme, 0.0f, goDown, 0.0f);
+				if (sprites[i].vao == 4)
+				{
+					const int moveLeft = glfwGetKey(window, GLFW_KEY_LEFT);
+					if (moveLeft == GLFW_PRESS && moveLeftRigth >= -200.0f)
+					{
+						moveLeftRigth -= 1.0f;
+					}
+
+					const int moveRight = glfwGetKey(window, GLFW_KEY_RIGHT);
+					if (moveRight == GLFW_PRESS && moveLeftRigth <= 250.0f)
+					{
+						moveLeftRigth += 1.0f;
+					}
+
+					Transform(matrix2, transformloc, shader_programme, moveLeftRigth, 0.0f, 0.0f);
+				}
+
+				if (sprites[i].vao > 4)
+				{
+					Transform(matrix2, transformloc, shader_programme, 0.0f, goDown, 0.0f);
+				}
+
+				glUniform1f(glGetUniformLocation(shader_programme, "offsety"), 0);
+				DefineOffsetAndRender(shader_programme, 0, 0, 1.0f, sprites[i].vao, sprites[i].tid);
 			}
 
-			glUniform1f(glGetUniformLocation(shader_programme, "offsety"), 0);
-			DefineOffsetAndRender(shader_programme, 0, 0, 1.0f, sprites[i].vao, sprites[i].tid);
+			if (goDown >= 1000.0f)
+			{
+				goDown = -300.0f;
+				outdatedCars++;
+			}
+			goDown += 2.0f;
 		}
 
-		if (goDown >= 1000.0f)
+		const int space = glfwGetKey(window, GLFW_KEY_SPACE);
+		if (space == GLFW_PRESS)//colidiu
 		{
-			goDown = -300.0f;
+			isGameOver = true;
 		}
-		goDown += 2.0f;
+
+		const int enter = glfwGetKey(window, GLFW_KEY_ENTER);
+		if (enter == GLFW_PRESS)
+		{
+			outdatedCars = 0;
+			isGameOver = false;
+		}
 
 		glfwSwapBuffers(window);
 	}
