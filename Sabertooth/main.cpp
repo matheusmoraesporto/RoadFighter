@@ -152,13 +152,13 @@ void DefineGeometry(Layer& l, GameObject& go, bool isSprite)
 
 	GLfloat verticesSpritePlayer[] = {
 		// positions			  // texture coords
-		300.0f, 300.0f, +0.0f,	  0.0, 0.0f,
-		300.0f, 150.0f, +0.0f,	  0.0f, 1.0f,
-		450.0f, 300.0f, +0.0f,	  1.0f, 0.0f,
+		300.0f, 550.0f, +0.0f,	  0.0, 0.0f,
+		300.0f, 400.0f, +0.0f,	  0.0f, 1.0f,
+		450.0f, 550.0f, +0.0f,	  1.0f, 0.0f,
 
-		450.0f, 300.0f, +0.0f,	  1.0, 0.0f,
-		300.0f, 150.0f, +0.0f,	  0.0f, 1.0f,
-		450.0f, 150.0f, +0.0f,	  1.0f, 1.0f,
+		450.0f, 550.0f, +0.0f,	  1.0, 0.0f,
+		300.0f, 400.0f, +0.0f,	  0.0f, 1.0f,
+		450.0f, 400.0f, +0.0f,	  1.0f, 1.0f,
 	};
 
 	GLuint VAO, VBO;
@@ -300,25 +300,25 @@ void StartGame(GLFWwindow* window)
 			glUniform1f(glGetUniformLocation(shader_programme, "offsety"), layers[i].ty);
 			glUniform1f(glGetUniformLocation(shader_programme, "layer_z"), layers[i].z);
 
+			
+
+			//// bind Texture
+			//glActiveTexture(GL_TEXTURE0);
+			//glBindTexture(GL_TEXTURE_2D, layers[i].tid);
+			//glUniform1i(glGetUniformLocation(shader_programme, "sprite"), 0);
+
+
 			Render(layers[i].vao, layers[i].tid, shader_programme);
-
-			// bind Texture
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, layers[i].tid);
-			glUniform1i(glGetUniformLocation(shader_programme, "sprite"), 0);
-
 			if (i == 1)
 			{
 				for (size_t i = 0; i < 3; i++)
 				{
 					glUniform1f(glGetUniformLocation(shader_programme, "offsety"), 0);
-					Render(sprites[i].vao, sprites[i].tid, shader_programme);
+					
 					glUniform1f(glGetUniformLocation(shader_programme, "offsetx"), 0);
 					glUniform1f(glGetUniformLocation(shader_programme, "offsety"), 0);
 					glUniform1f(glGetUniformLocation(shader_programme, "layer_z"), 1.0);
-					glActiveTexture(GL_TEXTURE0);
-					glBindTexture(GL_TEXTURE_2D, sprites[i].tid);
-					glUniform1i(glGetUniformLocation(shader_programme, "sprite"), 0);
+					Render(sprites[i].vao, sprites[i].tid, shader_programme);
 				}
 			}
 
