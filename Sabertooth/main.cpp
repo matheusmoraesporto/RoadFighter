@@ -268,6 +268,7 @@ void StartGame(GLFWwindow* window)
 	unsigned int transformloc = glGetUniformLocation(shader_programme, "matrix");
 	glUniformMatrix4fv(transformloc, 1, GL_FALSE, glm::value_ptr(matrix));
 	float goDown = -300;
+	float moveLeftRigth = 0.0f;
 	while (!glfwWindowShouldClose(window))
 	{
 		glfwPollEvents();
@@ -314,7 +315,22 @@ void StartGame(GLFWwindow* window)
 		}
 		for (size_t i = 0; i < 3; i++)
 		{
+			if (sprites[i].vao == 4) {
+				const int moveLeft = glfwGetKey(window, GLFW_KEY_LEFT);				
+				if (moveLeft == GLFW_PRESS && moveLeftRigth >= -200.0f) 
+				{
+					moveLeftRigth -= 1.0f;
+				}
+				const int moveRight = glfwGetKey(window, GLFW_KEY_RIGHT);
+				if (moveRight == GLFW_PRESS && moveLeftRigth <= 250.0f) {
+					moveLeftRigth += 1.0f;
+				}
+				matrix2 = glm::mat4(1.0f);
+				matrix2 = glm::translate(matrix2, glm::vec3(moveLeftRigth, 0.0f, 0.0f));
+				transformloc = glGetUniformLocation(shader_programme, "matrix");
+				glUniformMatrix4fv(transformloc, 1, GL_FALSE, glm::value_ptr(matrix2));
 
+			}
 			if (sprites[i].vao > 4) {
 				matrix2 = glm::mat4(1.0f);
 				matrix2 = glm::translate(matrix2, glm::vec3(0.0f, goDown, 0.0f));
@@ -332,17 +348,6 @@ void StartGame(GLFWwindow* window)
 		if (goDown >= 1000.0f)
 			goDown = -300.0f;
 		goDown += 2.0f;
-		
-
-		const int moveLeft = glfwGetKey(window, GLFW_KEY_LEFT);
-		if (moveLeft == GLFW_PRESS) {
-			std::cout << "Mama minha rola" << std::endl;
-		}
-
-		const int moveRight = glfwGetKey(window, GLFW_KEY_RIGHT);
-		if (moveRight == GLFW_PRESS) {
-			std::cout << "Mama minha rola" << std::endl;
-		}
 
 		glfwSwapBuffers(window);
 	}
