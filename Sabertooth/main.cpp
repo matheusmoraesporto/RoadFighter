@@ -15,6 +15,14 @@ using namespace std;
 Layer layers[3];
 GameObject sprites[4];
 
+// Constantes para tamanho de tela
+int WIDTH = 800;
+int HEIGHT = 600;
+
+// Const para vitoria
+int WIN = 10;
+
+// faz o bind das textura e desenha a geometria
 void Render(GLuint vao, GLuint texture, int sp)
 {
 	//Inicio do código para carregar textura
@@ -26,6 +34,7 @@ void Render(GLuint vao, GLuint texture, int sp)
 	glBindVertexArray(vao);
 }
 
+// Carrega a imagem, e seta os atributos dos objetos
 void LoadImage(Layer& l, GameObject& go, int id, bool isSprite)
 {
 	const char* img = "";
@@ -77,6 +86,7 @@ void LoadImage(Layer& l, GameObject& go, int id, bool isSprite)
 	glGenTextures(1, &texture);
 	glBindTexture(GL_TEXTURE_2D, texture);
 
+	// Quando for camada cria com GL_REPEAT, quando for sprites Cria LINEAR
 	if (isSprite)
 	{
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_LINEAR);
@@ -124,6 +134,7 @@ void LoadImage(Layer& l, GameObject& go, int id, bool isSprite)
 	}
 }
 
+// Define os vertices das layers e sprites. E faz a associação dos VAO e os VBO
 void DefineGeometry(Layer& l, GameObject& go, bool isSprite)
 {
 	GLfloat verticesLayer[] = {
@@ -191,22 +202,27 @@ void DefineGeometry(Layer& l, GameObject& go, bool isSprite)
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
+	// Game object do tipo player 
 	if (go.id == 4)
 	{
 		glBufferData(GL_ARRAY_BUFFER, sizeof(verticesSpritePlayer), verticesSpritePlayer, GL_STATIC_DRAW);
 	}
+	// Game object do Inimigo vermelho 
 	else if (go.id == 5)
 	{
 		glBufferData(GL_ARRAY_BUFFER, sizeof(verticesSpriteEnemyRed), verticesSpriteEnemyRed, GL_STATIC_DRAW);
 	}
+	// Game object do Inimigo branco
 	else if (go.id == 6)
 	{
 		glBufferData(GL_ARRAY_BUFFER, sizeof(verticesSpriteEnemyWhite), verticesSpriteEnemyWhite, GL_STATIC_DRAW);
 	}
+	// Game object do Inimigo Amarelo
 	else if (go.id == 7)
 	{
 		glBufferData(GL_ARRAY_BUFFER, sizeof(verticesSpriteEnemyYellow), verticesSpriteEnemyYellow, GL_STATIC_DRAW);
 	}
+	// define as outras sprites
 	else
 	{
 		glBufferData(GL_ARRAY_BUFFER, sizeof(verticesLayer), verticesLayer, GL_STATIC_DRAW);
@@ -220,6 +236,7 @@ void DefineGeometry(Layer& l, GameObject& go, bool isSprite)
 	glBindVertexArray(0);
 }
 
+// Atribuis o offsetx e o offsetY por layer e gameobject
 void DefineOffsetAndRender(int sp, float offsetx, float offsety, float z, GLuint vao, GLuint tid)
 {
 	glUniform1f(glGetUniformLocation(sp, "offsetx"), offsetx);
@@ -237,6 +254,9 @@ void Transform(glm::mat4& mt, unsigned int& tl, int sp, float x, float y, float 
 	glUniformMatrix4fv(tl, 1, GL_FALSE, glm::value_ptr(mt));
 }
 
+/* Redefine os valores de inicio de jogo e define a condição de vitoria (outdatecar++)
+* @params goDown(variavel da posição), outdated(variavel de vitoria, moveLeftRight(movimento Player), isgameOver(flag de game over)
+*/
 void ResetData(float& goDown, int& outdatedCars, float& moveLeftRight, bool isGameOver)
 {
 	goDown = -300.0f;
@@ -249,6 +269,10 @@ void ResetData(float& goDown, int& outdatedCars, float& moveLeftRight, bool isGa
 	}
 }
 
+/*
+	* Proriedade do main que é responsavel por criar todos os parametros necessarios para o inicio do jogo
+	@param Objeto janela
+*/
 void StartGame(GLFWwindow* window)
 {
 	//Vertex da textura
@@ -280,9 +304,6 @@ void StartGame(GLFWwindow* window)
 		" frag_color = texel;"
 		"}";
 
-	int WIDTH = 800;
-	int HEIGHT = 600;
-
 	glm::mat4 proj = glm::ortho(0.0f, (float)WIDTH, (float)HEIGHT, 0.0f, -1.0f, 1.0f);
 	glm::mat4 matrix = glm::translate(glm::mat4(1), glm::vec3(0, 0, 0));
 
@@ -300,6 +321,7 @@ void StartGame(GLFWwindow* window)
 	glAttachShader(shader_programme, vs);
 	glLinkProgram(shader_programme);
 
+	// Carrega as imagens e define a geometria das layers
 	for (size_t i = 0; i < 3; i++)
 	{
 		LoadImage(layers[i], GameObject::GameObject(), i + 1, false);
@@ -309,6 +331,7 @@ void StartGame(GLFWwindow* window)
 		glBindVertexArray(layers[i].vao);
 	}
 
+	// Carrega as imagens e define a geometria das sprites
 	for (size_t j = 0; j < 4; j++)
 	{
 		LoadImage(Layer::Layer(), sprites[j], j + 4, true);
@@ -318,32 +341,48 @@ void StartGame(GLFWwindow* window)
 		glBindVertexArray(sprites[j].vao);
 	}
 
+	// Carrega e define tela de game over
 	GameObject gameOver = GameObject::GameObject();
 	LoadImage(Layer::Layer(), gameOver, 9, true);
 	DefineGeometry(Layer::Layer(), gameOver, true);
 	glBindVertexArray(gameOver.vao);
 
+	// Carrega e define tela de vitoria
 	GameObject youWin = GameObject::GameObject();
 	LoadImage(Layer::Layer(), youWin, 8, true);
 	DefineGeometry(Layer::Layer(), youWin, true);
 	glBindVertexArray(youWin.vao);
 
+
+	// Matrix de movimento para sprits inimigas
 	glm::mat4 matrix2 = glm::mat4(1.0f);
 	unsigned int transformloc = glGetUniformLocation(shader_programme, "matrix");
 	glUniformMatrix4fv(transformloc, 1, GL_FALSE, glm::value_ptr(matrix));
+
+	// Variavel que controla a posição Y da matrix dos inimigos
 	float goDown = -300;
+
+	// Variavel que controla a posição X da matrix dos player
 	float moveLeftRigth = 0.0f;
+
+	// variavel que o controle do game over
 	bool isGameOver = false;
+
+	// Contador que realiza o controle para vitoria
 	int outdatedCars = 0;
 
 	while (!glfwWindowShouldClose(window))
 	{
+		//Habilita os eventos da tela
 		glfwPollEvents();
 
+		//Cor do fundo da tela
 		glClearColor(0.2f, 0.8f, 0.3f, 1.0f);
 
+		// Limpa o framebuffer, para evitar problemas de sujeira na renderização
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		// Tratamento para dimensionamento da tela
 		int screenWidth, screenHeight;
 		glfwGetWindowSize(window, &screenWidth, &screenHeight);
 		glViewport(0, 0, screenWidth, screenHeight);
@@ -354,17 +393,21 @@ void StartGame(GLFWwindow* window)
 		glUniformMatrix4fv(glGetUniformLocation(shader_programme, "proj"), 1, GL_FALSE, glm::value_ptr(proj));
 		glUniformMatrix4fv(glGetUniformLocation(shader_programme, "matrix"), 1, GL_FALSE, glm::value_ptr(matrix));
 
-		if (outdatedCars >= 10)
+		// Se passar dos 10, então game win (renderiza a tela de win)
+		if (outdatedCars >= WIN)
 		{
 			DefineOffsetAndRender(shader_programme, 0.0f, 0.0f, 1.0f, youWin.vao, youWin.tid);
 		}
+		// Se bater o carro, então renderiza a tela de game over
 		else if (isGameOver)
 		{
 			DefineOffsetAndRender(shader_programme, 0.0f, 0.0f, 1.0f, gameOver.vao, gameOver.tid);
 			ResetData(goDown, outdatedCars, moveLeftRigth, true);
 		}
+		//Mantem o desenho das camadas e sprites normalmente
 		else
 		{
+			// Desenha as layers e faz o movimento do parallax
 			for (size_t i = 0; i < 3; i++)
 			{
 				layers[i].ty -= layers[i].scrollRateY * 0.015f;
@@ -372,8 +415,10 @@ void StartGame(GLFWwindow* window)
 				DefineOffsetAndRender(shader_programme, layers[i].tx, layers[i].ty, layers[i].z, layers[i].vao, layers[i].tid);
 			}
 
+			//Faz o desenho das sprites
 			for (size_t i = 0; i < 4; i++)
 			{
+				// Quando for o player, observa a variavel de movimento e não deixa sair para o oceano
 				if (sprites[i].vao == 4)
 				{
 					const int moveLeft = glfwGetKey(window, GLFW_KEY_LEFT);
@@ -391,15 +436,16 @@ void StartGame(GLFWwindow* window)
 					Transform(matrix2, transformloc, shader_programme, moveLeftRigth, 0.0f, 0.0f);
 				}
 
+				// Quando for as outras sprites, ele realiza o movimento no Y das sprites dos inimigos
 				if (sprites[i].vao > 4)
 				{
 					Transform(matrix2, transformloc, shader_programme, 0.0f, goDown, 0.0f);
 				}
 
-				glUniform1f(glGetUniformLocation(shader_programme, "offsety"), 0);
 				DefineOffsetAndRender(shader_programme, 0, 0, 1.0f, sprites[i].vao, sprites[i].tid);
 			}
 
+			// Se os inimigos já sairam da tela, então reseta sua posição para inicial
 			if (goDown >= 1250.0f)
 			{
 				ResetData(goDown, outdatedCars, moveLeftRigth, false);
@@ -407,17 +453,17 @@ void StartGame(GLFWwindow* window)
 			goDown += 2.0f;
 		}
 
-		if (
-			(goDown >= 570 && goDown <= 846 && moveLeftRigth <= -85) ||
-			(goDown >= 800 && goDown <= 1040 && moveLeftRigth >= -70 && moveLeftRigth <= 120) ||
-			(goDown >= 930 && goDown <= 1200 && moveLeftRigth >= 126)
-			)
+		// Controla a colisão das sprites inimigas com a posição do player
+		if ((goDown >= 570 && goDown <= 846 && moveLeftRigth <= -85) ||
+			(goDown >= 800 && goDown <= 1040 && moveLeftRigth >= -70 && moveLeftRigth <= 110) ||
+			(goDown >= 930 && goDown <= 1200 && moveLeftRigth >= 126))
 		{
 			isGameOver = true;
 		}
 
+		// Restarta o jogo ao entrar ao apertar enter nas telas de game win ou over
 		const int enter = glfwGetKey(window, GLFW_KEY_ENTER);
-		if (enter == GLFW_PRESS)
+		if (enter == GLFW_PRESS && (isGameOver || outdatedCars >= WIN))
 		{
 			outdatedCars = 0;
 			isGameOver = false;
@@ -429,15 +475,27 @@ void StartGame(GLFWwindow* window)
 
 int main()
 {
-	// Tratamento para rodar em outros ambientes
+	/*
+	 * Verifica se deu sucesso na incialização do glfw
+	 * Caso tenha retorno falso, sai do programa com print no console com erro
+	*/
 	if (!glfwInit())
 	{
 		fprintf(stderr, "ERROR: could not start GLFW3\n");
 		return 1;
 	}
 
-	GLFWwindow* window = glfwCreateWindow(800, 600, "Road Fighter developed by Matheus Moraes Porto", NULL, NULL);
 
+	/*
+	  * Cria o objeto janela definindo a largura, altura e titulo
+	  *
+	*/
+	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Road Fighter developed by Matheus Moraes Porto and Vitor Marco", NULL, NULL);
+
+
+	/*
+		*Tratamento de excessão para caso houver um erro ao criar a janela
+	*/
 	if (!window)
 	{
 		fprintf(stderr, "ERROR: could not open window with GLFW3\n");
