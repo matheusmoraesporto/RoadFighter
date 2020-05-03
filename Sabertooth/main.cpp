@@ -48,7 +48,7 @@ void LoadImage(Layer& l, GameObject& go, int id, bool isSprite)
 	case 3:
 		img = "..\\Images\\cloud.png";
 		taxaIncremento = 0.8f;
-		valueZ = 1.002f;
+		valueZ = 0.9f;
 		break;
 	case 4:
 		img = "..\\Images\\player.png";
@@ -171,7 +171,8 @@ void DefineGeometry(Layer& l, GameObject& go, bool isSprite)
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-	if (go.id == 4) {
+	if (go.id == 4) 
+	{
 		glBufferData(GL_ARRAY_BUFFER, sizeof(verticesSpritePlayer), verticesSpritePlayer, GL_STATIC_DRAW);
 	}
 	else if (go.id == 5)
@@ -193,6 +194,23 @@ void DefineGeometry(Layer& l, GameObject& go, bool isSprite)
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
 	glBindVertexArray(0);
+}
+
+void DefineOffsetAndRender(int sp, float offsetx, float offsety, float z, GLuint vao, GLuint tid)
+{
+	glUniform1f(glGetUniformLocation(sp, "offsetx"), offsetx);
+	glUniform1f(glGetUniformLocation(sp, "offsety"), offsety);
+	glUniform1f(glGetUniformLocation(sp, "layer_z"), z);
+
+	Render(vao, tid, sp);
+}
+
+void Transform(glm::mat4& mt, unsigned int& tl, int sp, float x, float y, float z)
+{
+	mt = glm::mat4(1.0f);
+	mt = glm::translate(mt, glm::vec3(x, y, z));
+	tl = glGetUniformLocation(sp, "matrix");
+	glUniformMatrix4fv(tl, 1, GL_FALSE, glm::value_ptr(mt));
 }
 
 void StartGame(GLFWwindow* window)
@@ -269,21 +287,13 @@ void StartGame(GLFWwindow* window)
 	glUniformMatrix4fv(transformloc, 1, GL_FALSE, glm::value_ptr(matrix));
 	float goDown = -300;
 	float moveLeftRigth = 0.0f;
+
 	while (!glfwWindowShouldClose(window))
 	{
 		glfwPollEvents();
-		//const int state = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
-		//if (state == GLFW_PRESS) {
-		//	double mx, my;
-		//	glfwGetCursorPos(window, &mx, &my);
-		//	matrix = glm::translate(glm::mat4(1), glm::vec3(mx - WIDTH / 2.0f, my - HEIGHT / 2.0f, 0));
-		//}
-
-		//if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-		//	glfwSetWindowShouldClose(window, GLFW_TRUE);
-		//}
 
 		glClearColor(0.2f, 0.8f, 0.3f, 1.0f);
+
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		int screenWidth, screenHeight;
@@ -300,53 +310,41 @@ void StartGame(GLFWwindow* window)
 		{
 			layers[i].ty -= layers[i].scrollRateY * 0.015f;
 
-			glUniform1f(glGetUniformLocation(shader_programme, "offsetx"), layers[i].tx);
-			glUniform1f(glGetUniformLocation(shader_programme, "offsety"), layers[i].ty);
-			glUniform1f(glGetUniformLocation(shader_programme, "layer_z"), layers[i].z);
-
-			//// bind Texture
-			//glActiveTexture(GL_TEXTURE0);
-			//glBindTexture(GL_TEXTURE_2D, layers[i].tid);
-			//glUniform1i(glGetUniformLocation(shader_programme, "sprite"), 0);
-
-
-			Render(layers[i].vao, layers[i].tid, shader_programme);
-
+			DefineOffsetAndRender(shader_programme, layers[i].tx, layers[i].ty, layers[i].z, layers[i].vao, layers[i].tid);
 		}
+
 		for (size_t i = 0; i < 3; i++)
 		{
-			if (sprites[i].vao == 4) {
-				const int moveLeft = glfwGetKey(window, GLFW_KEY_LEFT);				
-				if (moveLeft == GLFW_PRESS && moveLeftRigth >= -200.0f) 
+			if (sprites[i].vao == 4) 
+			{
+				const int moveLeft = glfwGetKey(window, GLFW_KEY_LEFT);
+				if (moveLeft == GLFW_PRESS && moveLeftRigth >= -200.0f)
 				{
 					moveLeftRigth -= 1.0f;
 				}
+
 				const int moveRight = glfwGetKey(window, GLFW_KEY_RIGHT);
-				if (moveRight == GLFW_PRESS && moveLeftRigth <= 250.0f) {
+				if (moveRight == GLFW_PRESS && moveLeftRigth <= 250.0f)
+				{
 					moveLeftRigth += 1.0f;
 				}
-				matrix2 = glm::mat4(1.0f);
-				matrix2 = glm::translate(matrix2, glm::vec3(moveLeftRigth, 0.0f, 0.0f));
-				transformloc = glGetUniformLocation(shader_programme, "matrix");
-				glUniformMatrix4fv(transformloc, 1, GL_FALSE, glm::value_ptr(matrix2));
 
+				Transform(matrix2, transformloc, shader_programme, moveLeftRigth, 0.0f, 0.0f);
 			}
-			if (sprites[i].vao > 4) {
-				matrix2 = glm::mat4(1.0f);
-				matrix2 = glm::translate(matrix2, glm::vec3(0.0f, goDown, 0.0f));
-				transformloc = glGetUniformLocation(shader_programme, "matrix");
-				glUniformMatrix4fv(transformloc, 1, GL_FALSE, glm::value_ptr(matrix2));
 
+			if (sprites[i].vao > 4)
+			{
+				Transform(matrix2, transformloc, shader_programme, 0.0f, goDown, 0.0f);
 			}
-			glUniform1f(glGetUniformLocation(shader_programme, "offsety"), 0);
 
-			glUniform1f(glGetUniformLocation(shader_programme, "offsetx"), 0);
 			glUniform1f(glGetUniformLocation(shader_programme, "offsety"), 0);
-			glUniform1f(glGetUniformLocation(shader_programme, "layer_z"), 1.0);
-			Render(sprites[i].vao, sprites[i].tid, shader_programme);
+			DefineOffsetAndRender(shader_programme, 0, 0, 1.0f, sprites[i].vao, sprites[i].tid);
 		}
+
 		if (goDown >= 1000.0f)
+		{
 			goDown = -300.0f;
+		}
 		goDown += 2.0f;
 
 		glfwSwapBuffers(window);
