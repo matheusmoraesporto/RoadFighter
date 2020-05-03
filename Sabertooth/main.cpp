@@ -130,24 +130,24 @@ void DefineGeometry(Layer& l, GameObject& go, bool isSprite)
 
 	GLfloat verticesSpriteEnemyWhite[] = {
 		// positions			  // texture coords
-		150.0f, 300.0f, +0.0f,	  0.0, 0.0f,
-		150.0f, 150.0f, +0.0f,	  0.0f, 1.0f,
-		250.0f, 300.0f, +0.0f,	  1.0f, 0.0f,
+		150.0f, -300.0f, +0.0f,	  0.0, 0.0f,
+		150.0f, -150.0f, +0.0f,	  0.0f, 1.0f,
+		250.0f, -300.0f, +0.0f,	  1.0f, 0.0f,
 
-		250.0f, 300.0f, +0.0f,	  1.0, 0.0f,
-		150.0f, 150.0f, +0.0f,	  0.0f, 1.0f,
-		250.0f, 150.0f, +0.0f,	  1.0f, 1.0f,
+		250.0f, -300.0f, +0.0f,	  1.0, 0.0f,
+		150.0f, -150.0f, +0.0f,	  0.0f, 1.0f,
+		250.0f, -150.0f, +0.0f,	  1.0f, 1.0f,
 	};
 
 	GLfloat verticesSpriteEnemyRed[] = {
 		// positions			  // texture coords
-		450.0f, 300.0f, +0.0f,	  0.0, 0.0f,
-		450.0f, 150.0f, +0.0f,	  0.0f, 1.0f,
-		550.0f, 300.0f, +0.0f,	  1.0f, 0.0f,
+		450.0f, -300.0f, +0.0f,	  0.0, 0.0f,
+		450.0f, -150.0f, +0.0f,	  0.0f, 1.0f,
+		550.0f, -300.0f, +0.0f,	  1.0f, 0.0f,
 
-		550.0f, 300.0f, +0.0f,	  1.0, 0.0f,
-		450.0f, 150.0f, +0.0f,	  0.0f, 1.0f,
-		550.0f, 150.0f, +0.0f,	  1.0f, 1.0f,
+		550.0f, -300.0f, +0.0f,	  1.0, 0.0f,
+		450.0f, -150.0f, +0.0f,	  0.0f, 1.0f,
+		550.0f, -150.0f, +0.0f,	  1.0f, 1.0f,
 	};
 
 	GLfloat verticesSpritePlayer[] = {
@@ -264,6 +264,10 @@ void StartGame(GLFWwindow* window)
 		glBindVertexArray(sprites[j].vao);
 	}
 
+	glm::mat4 matrix2 = glm::mat4(1.0f);
+	unsigned int transformloc = glGetUniformLocation(shader_programme, "matrix");
+	glUniformMatrix4fv(transformloc, 1, GL_FALSE, glm::value_ptr(matrix));
+	float goDown = -300;
 	while (!glfwWindowShouldClose(window))
 	{
 		glfwPollEvents();
@@ -306,20 +310,29 @@ void StartGame(GLFWwindow* window)
 
 
 			Render(layers[i].vao, layers[i].tid, shader_programme);
-			if (i == 1)
-			{
-				for (size_t i = 0; i < 3; i++)
-				{
-					//glUniform1f(glGetUniformLocation(shader_programme, "offsety"), 0);
-
-					glUniform1f(glGetUniformLocation(shader_programme, "offsetx"), 0);
-					glUniform1f(glGetUniformLocation(shader_programme, "offsety"), 0);
-					glUniform1f(glGetUniformLocation(shader_programme, "layer_z"), 1.0);
-					Render(sprites[i].vao, sprites[i].tid, shader_programme);
-				}
-			}
 
 		}
+		for (size_t i = 0; i < 3; i++)
+		{
+
+			if (sprites[i].vao > 4) {
+				matrix2 = glm::mat4(1.0f);
+				matrix2 = glm::translate(matrix2, glm::vec3(0.0f, goDown, 0.0f));
+				transformloc = glGetUniformLocation(shader_programme, "matrix");
+				glUniformMatrix4fv(transformloc, 1, GL_FALSE, glm::value_ptr(matrix2));
+
+			}
+			glUniform1f(glGetUniformLocation(shader_programme, "offsety"), 0);
+
+			glUniform1f(glGetUniformLocation(shader_programme, "offsetx"), 0);
+			glUniform1f(glGetUniformLocation(shader_programme, "offsety"), 0);
+			glUniform1f(glGetUniformLocation(shader_programme, "layer_z"), 1.0);
+			Render(sprites[i].vao, sprites[i].tid, shader_programme);
+		}
+		if (goDown >= 1000.0f)
+			goDown = -300.0f;
+		goDown += 2.0f;
+		
 
 		const int moveLeft = glfwGetKey(window, GLFW_KEY_LEFT);
 		if (moveLeft == GLFW_PRESS) {
