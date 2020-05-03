@@ -13,7 +13,7 @@
 using namespace std;
 
 Layer layers[3];
-GameObject sprites[3];
+GameObject sprites[4];
 
 void Render(GLuint vao, GLuint texture, int sp)
 {
@@ -63,12 +63,13 @@ void LoadImage(Layer& l, GameObject& go, int id, bool isSprite)
 		valueZ = 1.0f;
 		break;
 	case 7:
-		img = "..\\Images\\youWin.PNG";
-		valueZ = 1.0f;
+		img = "..\\Images\\enemyYellow.png";
 		break;
 	case 8:
+		img = "..\\Images\\youWin.PNG";
+		break;
+	case 9:
 		img = "..\\Images\\gameOver.PNG";
-		valueZ = 1.0f;
 		break;
 	}
 
@@ -149,13 +150,24 @@ void DefineGeometry(Layer& l, GameObject& go, bool isSprite)
 
 	GLfloat verticesSpriteEnemyRed[] = {
 		// positions			  // texture coords
-		450.0f, -300.0f, +0.0f,	  0.0, 0.0f,
-		450.0f, -150.0f, +0.0f,	  0.0f, 1.0f,
-		550.0f, -300.0f, +0.0f,	  1.0f, 0.0f,
+		550.0f, -650.0f, +0.0f,	  0.0, 0.0f,
+		550.0f, -500.0f, +0.0f,	  0.0f, 1.0f,
+		650.0f, -650.0f, +0.0f,	  1.0f, 0.0f,
 
-		550.0f, -300.0f, +0.0f,	  1.0, 0.0f,
-		450.0f, -150.0f, +0.0f,	  0.0f, 1.0f,
-		550.0f, -150.0f, +0.0f,	  1.0f, 1.0f,
+		650.0f, -650.0f, +0.0f,	  1.0, 0.0f,
+		550.0f, -500.0f, +0.0f,	  0.0f, 1.0f,
+		650.0f, -500.0f, +0.0f,	  1.0f, 1.0f,
+	};
+
+	GLfloat verticesSpriteEnemyYellow[] = {
+		// positions			  // texture coords
+		350.0f, -500.0f, +0.0f,	  0.0, 0.0f,
+		350.0f, -350.0f, +0.0f,	  0.0f, 1.0f,
+		450.0f, -500.0f, +0.0f,	  1.0f, 0.0f,
+
+		450.0f, -500.0f, +0.0f,	  1.0, 0.0f,
+		350.0f, -350.0f, +0.0f,	  0.0f, 1.0f,
+		450.0f, -350.0f, +0.0f,	  1.0f, 1.0f,
 	};
 
 	GLfloat verticesSpritePlayer[] = {
@@ -191,6 +203,10 @@ void DefineGeometry(Layer& l, GameObject& go, bool isSprite)
 	{
 		glBufferData(GL_ARRAY_BUFFER, sizeof(verticesSpriteEnemyWhite), verticesSpriteEnemyWhite, GL_STATIC_DRAW);
 	}
+	else if (go.id == 7)
+	{
+		glBufferData(GL_ARRAY_BUFFER, sizeof(verticesSpriteEnemyYellow), verticesSpriteEnemyYellow, GL_STATIC_DRAW);
+	}
 	else
 	{
 		glBufferData(GL_ARRAY_BUFFER, sizeof(verticesLayer), verticesLayer, GL_STATIC_DRAW);
@@ -219,6 +235,18 @@ void Transform(glm::mat4& mt, unsigned int& tl, int sp, float x, float y, float 
 	mt = glm::translate(mt, glm::vec3(x, y, z));
 	tl = glGetUniformLocation(sp, "matrix");
 	glUniformMatrix4fv(tl, 1, GL_FALSE, glm::value_ptr(mt));
+}
+
+void ResetData(float& goDown, int& outdatedCars, float& moveLeftRight, bool isGameOver)
+{
+	goDown = -300.0f;
+	outdatedCars++;
+
+	if (isGameOver)
+	{
+		outdatedCars = 0;
+		moveLeftRight = 0.0f;
+	}
 }
 
 void StartGame(GLFWwindow* window)
@@ -281,7 +309,7 @@ void StartGame(GLFWwindow* window)
 		glBindVertexArray(layers[i].vao);
 	}
 
-	for (size_t j = 0; j < 3; j++)
+	for (size_t j = 0; j < 4; j++)
 	{
 		LoadImage(Layer::Layer(), sprites[j], j + 4, true);
 
@@ -291,12 +319,12 @@ void StartGame(GLFWwindow* window)
 	}
 
 	GameObject gameOver = GameObject::GameObject();
-	LoadImage(Layer::Layer(), gameOver, 8, true);
+	LoadImage(Layer::Layer(), gameOver, 9, true);
 	DefineGeometry(Layer::Layer(), gameOver, true);
 	glBindVertexArray(gameOver.vao);
 
 	GameObject youWin = GameObject::GameObject();
-	LoadImage(Layer::Layer(), youWin, 7, true);
+	LoadImage(Layer::Layer(), youWin, 8, true);
 	DefineGeometry(Layer::Layer(), youWin, true);
 	glBindVertexArray(youWin.vao);
 
@@ -326,13 +354,14 @@ void StartGame(GLFWwindow* window)
 		glUniformMatrix4fv(glGetUniformLocation(shader_programme, "proj"), 1, GL_FALSE, glm::value_ptr(proj));
 		glUniformMatrix4fv(glGetUniformLocation(shader_programme, "matrix"), 1, GL_FALSE, glm::value_ptr(matrix));
 
-		if (outdatedCars >= 1)
+		if (outdatedCars >= 10)
 		{
 			DefineOffsetAndRender(shader_programme, 0.0f, 0.0f, 1.0f, youWin.vao, youWin.tid);
 		}
 		else if (isGameOver)
 		{
 			DefineOffsetAndRender(shader_programme, 0.0f, 0.0f, 1.0f, gameOver.vao, gameOver.tid);
+			ResetData(goDown, outdatedCars, moveLeftRigth, true);
 		}
 		else
 		{
@@ -343,7 +372,7 @@ void StartGame(GLFWwindow* window)
 				DefineOffsetAndRender(shader_programme, layers[i].tx, layers[i].ty, layers[i].z, layers[i].vao, layers[i].tid);
 			}
 
-			for (size_t i = 0; i < 3; i++)
+			for (size_t i = 0; i < 4; i++)
 			{
 				if (sprites[i].vao == 4)
 				{
@@ -371,19 +400,20 @@ void StartGame(GLFWwindow* window)
 				DefineOffsetAndRender(shader_programme, 0, 0, 1.0f, sprites[i].vao, sprites[i].tid);
 			}
 
-			if (goDown >= 1000.0f)
+			if (goDown >= 1250.0f)
 			{
-				goDown = -300.0f;
-				outdatedCars++;
+				ResetData(goDown, outdatedCars, moveLeftRigth, false);
 			}
 			goDown += 2.0f;
 		}
 
-		const int space = glfwGetKey(window, GLFW_KEY_SPACE);
-		if (space == GLFW_PRESS)//colidiu
-		{
-			isGameOver = true;
-		}
+		//if (
+		//	(goDown >= 570 && moveLeftRigth <= -85)
+		//	//|| (goDown >= 550 && moveLeftRigth <= -85.0)
+		//	)
+		//{
+		//	isGameOver = true;
+		//}
 
 		const int enter = glfwGetKey(window, GLFW_KEY_ENTER);
 		if (enter == GLFW_PRESS)
