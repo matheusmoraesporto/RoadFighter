@@ -266,7 +266,7 @@ void StartGame(GLFWwindow* window)
 
 	while (!glfwWindowShouldClose(window))
 	{
-		//glfwPollEvents();
+		glfwPollEvents();
 		//const int state = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
 		//if (state == GLFW_PRESS) {
 		//	double mx, my;
@@ -293,14 +293,11 @@ void StartGame(GLFWwindow* window)
 
 		for (size_t i = 0; i < 3; i++)
 		{
-
 			layers[i].ty -= layers[i].scrollRateY * 0.015f;
 
 			glUniform1f(glGetUniformLocation(shader_programme, "offsetx"), layers[i].tx);
 			glUniform1f(glGetUniformLocation(shader_programme, "offsety"), layers[i].ty);
 			glUniform1f(glGetUniformLocation(shader_programme, "layer_z"), layers[i].z);
-
-			
 
 			//// bind Texture
 			//glActiveTexture(GL_TEXTURE0);
@@ -313,8 +310,8 @@ void StartGame(GLFWwindow* window)
 			{
 				for (size_t i = 0; i < 3; i++)
 				{
-					glUniform1f(glGetUniformLocation(shader_programme, "offsety"), 0);
-					
+					//glUniform1f(glGetUniformLocation(shader_programme, "offsety"), 0);
+
 					glUniform1f(glGetUniformLocation(shader_programme, "offsetx"), 0);
 					glUniform1f(glGetUniformLocation(shader_programme, "offsety"), 0);
 					glUniform1f(glGetUniformLocation(shader_programme, "layer_z"), 1.0);
@@ -324,7 +321,15 @@ void StartGame(GLFWwindow* window)
 
 		}
 
+		const int moveLeft = glfwGetKey(window, GLFW_KEY_LEFT);
+		if (moveLeft == GLFW_PRESS) {
+			std::cout << "Mama minha rola" << std::endl;
+		}
 
+		const int moveRight = glfwGetKey(window, GLFW_KEY_RIGHT);
+		if (moveRight == GLFW_PRESS) {
+			std::cout << "Mama minha rola" << std::endl;
+		}
 
 		glfwSwapBuffers(window);
 	}
